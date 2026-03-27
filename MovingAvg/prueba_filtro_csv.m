@@ -1,20 +1,15 @@
 %% prueba_filtro_csv.m
 % Prueba del filtro con datos cargados desde CSV
+%
 % Este script:
 % 1) Carga los vectores x e y desde datos_x.csv y datos_y.csv
-% 2) Ejecuta el script/funcion main.m, que a su vez usa Filtro.m
-% 3) Grafica la señal original y la señal filtrada
-% 4) Calcula un porcentaje aproximado de optimizacion de la señal
+% 2) Ejecuta MovAvgMain.m, que usa MovingAverage.m
+% 3) Grafica la senal original y la senal filtrada
+% 4) Calcula la misma metrica de eficiencia que tu ejemplo:
 %
-% NOTA:
-% El "porcentaje de optimizacion" se calcula como reduccion del contenido
-% de alta frecuencia usando la desviacion estandar de la primera diferencia:
+%    eficiencia_prr = (1 - var(y_filtrada) / var(y_original)) * 100
 %
-%   optimizacion(%) = (1 - std(diff(y_filtrada)) / std(diff(y_original))) * 100
-%
-% Esto se interpreta como una estimacion de cuanto ruido/variacion rapida
-% se redujo despues del filtrado. No es una metrica absoluta de calidad,
-% sino una aproximacion util para comparar antes vs. despues.
+% ignorando el primer 10% por transitorio.
 
 clear; clc; close all;
 
@@ -28,100 +23,89 @@ if ~isfile('datos_y.csv')
 end
 
 if ~isfile('MovAvgMain.m')
-    error('No se encontro main.m en la carpeta actual.');
+    error('No se encontro el archivo MovAvgMain.m en la carpeta actual.');
 end
 
 if ~isfile('MovAvg.m')
-    error('No se encontro Filtro.m en la carpeta actual.');
+    error('No se encontro el archivo MovingAverage.m en la carpeta actual.');
 end
 
 %% Carga de datos
 x_tbl = readtable('datos_x.csv');
 y_tbl = readtable('datos_y.csv');
 
-x = x_tbl{:,1};
-y = y_tbl{:,1};
+datax = x_tbl{:,1};
+datay = y_tbl{:,1};
 
-x = x(:);
-y = y(:);
+datax = datax(:);
+datay = datay(:);
 
-if isempty(x) || isempty(y)
+if isempty(datax) || isempty(datay)
     error('Alguno de los vectores esta vacio.');
 end
 
-if length(x) ~= length(y)
-    error('Los vectores x e y no tienen la misma longitud. x=%d, y=%d', length(x), length(y));
+if length(datax) ~= length(datay)
+    error('Los vectores x e y no tienen la misma longitud. x=%d, y=%d', length(datax), length(datay));
 end
 
 %% Aplicacion del filtro
-% La funcion main(v) devuelve una salida con longitud menor
-% porque usa una ventana de 3 datos y empieza a entregar salida
-% a partir del tercer dato valido.
-y_filtrada = MovAvgMain(y);
+y_filtered = MovAvgMain(datay);
+y_filtered = y_filtered(:);
 
-% Alineacion del tiempo con la salida filtrada
-% Si todos los datos de y son mayores a 0, la salida arranca en la muestra 3.
-x_filtrada = x(3:end);
+if isempty(y_filtered)
+    error('La salida de MovAvgMain esta vacia.');
+end
 
-% Ajuste de seguridad por si la funcion main devuelve una longitud distinta
-n = min(length(x_filtrada), length(y_filtrada));
-x_filtrada = x_filtrada(1:n);
-y_filtrada = y_filtrada(1:n);
+if length(y_filtered) ~= length(datay)
+    error('La senal filtrada y la original no tienen la misma longitud.');
+end
 
-y_original_alineada = y(3:2+n);
+%% Grafica principal
+figure('Name', 'System Response vs Filtered', 'Color', 'w');
 
-%% Metricas
-% 1) Reduccion de variacion rapida (aproximacion a reduccion de ruido)
-hf_original = std(diff(y_original_alineada));
-hf_filtrada = std(diff(y_filtrada));
+plot(datax, datay, 'LineWidth', 2)
+hold on
+plot(datax, y_filtered, 'LineWidth', 2)
 
-optimizacion_pct = (1 - (hf_filtrada / hf_original)) * 100;
+grid on
+box on
 
-% 2) Variacion total
-std_original = std(y_original_alineada);
-std_filtrada = std(y_filtrada);
+xlabel('Time (s)', 'FontSize', 12)
+ylabel('Response', 'FontSize', 12)
+title('System Response vs Filtered', 'FontSize', 14)
 
-% 3) Error entre original y filtrada
-rmse_original_vs_filtrada = sqrt(mean((y_original_alineada - y_filtrada).^2));
+legend({'Measured', 'Filtered'}, 'Location', 'best')
+set(gca, 'FontSize', 12)
 
-%% Resultados en consola
-fprintf('\n===== RESULTADOS DE LA PRUEBA =====\n');
-fprintf('Muestras originales: %d\n', length(y));
-fprintf('Muestras filtradas : %d\n', length(y_filtrada));
-fprintf('STD original       : %.6f\n', std_original);
-fprintf('STD filtrada       : %.6f\n', std_filtrada);
-fprintf('HF original        : %.6f\n', hf_original);
-fprintf('HF filtrada        : %.6f\n', hf_filtrada);
-fprintf('RMSE O-F           : %.6f\n', rmse_original_vs_filtrada);
-fprintf('Optimizacion aprox : %.2f %%\n', optimizacion_pct);
+%% Metrica EXACTAMENTE como tu ejemplo
+% 1. Definir el punto de inicio (ignorar el primer 10% por el transitorio)
+n = length(datay);
+recorte = round(n * 0.1);
 
-%% Graficas
-figure('Name','Prueba del filtro','NumberTitle','off');
+if recorte == 0
+    recorte = 1;
+end
 
-subplot(2,1,1);
-plot(x, y, 'DisplayName', 'Senal original');
-hold on;
-plot(x_filtrada, y_filtrada, 'LineWidth', 1.2, 'DisplayName', 'Senal filtrada');
+% 2. Crear el indice de comparacion (del recorte al final)
+idx = recorte:n;
+
+% 3. Calcular varianzas solo en ese rango
+var_ruidosa  = var(datay(idx));
+var_filtrada = var(y_filtered(idx));
+
+% 4. Metrica de Eficiencia: Porcentaje de Ruido Eliminado (PRE)
+eficiencia_prr = (1 - (var_filtrada / var_ruidosa)) * 100;
+
+% 5. Mostrar resultado rapido
+fprintf('--- Resultado de Eficiencia ---\n');
+fprintf('Ruido eliminado: %.2f%%\n', eficiencia_prr);
+
+%% Visualizacion del "Termometro"
+figure('Name', 'Eficiencia del Filtro', 'Color', 'w');
+bar(eficiencia_prr, 'FaceColor', [0.2 0.6 0.5]);
+ylabel('Porcentaje (%)');
+ylim([-20 100]);
 grid on;
-xlabel('Tiempo');
-ylabel('Amplitud');
-title('Senal original vs senal filtrada');
-legend('Location', 'best');
-
-subplot(2,1,2);
-plot(x_filtrada, y_original_alineada - y_filtrada, 'DisplayName', 'Diferencia');
-grid on;
-xlabel('Tiempo');
-ylabel('Error');
-title(sprintf('Diferencia original-filtrada | Optimizacion aprox = %.2f %%', optimizacion_pct));
-
-%% Figura adicional: comparacion de primeras diferencias
-figure('Name','Comparacion de variacion rapida','NumberTitle','off');
-plot(x_filtrada(2:end), diff(y_original_alineada), 'DisplayName', 'diff(original)');
-hold on;
-plot(x_filtrada(2:end), diff(y_filtrada), 'LineWidth', 1.2, 'DisplayName', 'diff(filtrada)');
-grid on;
-xlabel('Tiempo');
-ylabel('Primera diferencia');
-title('Comparacion de contenido de alta frecuencia');
-legend('Location', 'best');
+title(['Eficiencia Concreta: ', num2str(eficiencia_prr, '%.2f'), '%']);
+set(gca, 'XTick', 1);
+set(gca, 'XTickLabel', {'Reduccion de Ruido'});
