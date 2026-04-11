@@ -52,3 +52,18 @@ void mat_Identity(float **matrix, int n)
 		}
 	}
 }
+
+float** mat_Transpose(float **mat, int n)
+{
+	float **trans = mat_Create(n);
+
+	for(int i=0; i<n; i++)
+	{
+		for(int j=0; j<n; j++)
+		{
+			trans[j][i] = mat[i][j];
+		}
+	}
+
+	return trans;
+}

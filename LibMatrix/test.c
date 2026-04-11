@@ -5,15 +5,26 @@
 
 int main()
 {
-	float** mat;
+	float **mat, **trans;
 
 	mat = mat_Create(N);
 	
 	mat_Identity(mat, N);
+	mat[1][2] = 2;
+
+	trans = mat_Transpose(mat, N);
 
 	mat_Show(mat, N);
+	printf("\n");
+	mat_Show(trans, N);
+
+	trans = mat_Transpose(trans, N);
+
+	printf("\n");
+	mat_Show(trans, N);
 
 	mat_Free(mat, N);
+	mat_Free(trans, N);
 
 	return 0;
 }
