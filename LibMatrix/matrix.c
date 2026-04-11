@@ -3,16 +3,19 @@
 //its assumed, every matrix is square. Hence mat[n][n]
 float** mat_Create(int n)
 {
-	float **mat = (float**)malloc(sizeof(float*)*3);
+	float **mat = (float**)malloc(n * sizeof(float*));
 
 	if(mat == NULL) return NULL;
 
 	for(int i=0; i<n; i++)
 	{	
-		mat[i] = (float*)malloc(sizeof(float)*3);
+		mat[i] = (float*)calloc(n, sizeof(float));
 		if(mat[i] == NULL)
 		{
-            for (int j = 0; j < i; j++) free(mat[j]);
+            for (int j = 0; j < i; j++) 
+            {
+            	free(mat[j]);
+            }
             free(mat);
             return NULL;
         }
@@ -79,4 +82,28 @@ void mat_Transpose(float **mat, float **trans, int n) {
             }
         }
     }
+}
+
+void mat_Multiplication(float **A, float **B, float **C, int colA, int rowA, int colB, int rowB)
+{
+	if(colA!=rowB)
+	{
+		printf("No se puede realizar la multiplicacion. Las dimensiones no coinciden\n");
+		return;
+	}
+
+	float sum = 0;
+	for(int i=0; i<rowA; i++)
+	{
+		for(int j=0; j<colB; j++)
+		{
+			for(int k=0; k<colA; k++)
+			{
+				sum += A[i][k] * B[k][j];
+			}
+			C[i][j] = sum;
+			sum = 0;
+		}
+	}
+
 }
