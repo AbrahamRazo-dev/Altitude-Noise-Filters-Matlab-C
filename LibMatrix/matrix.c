@@ -53,17 +53,30 @@ void mat_Identity(float **matrix, int n)
 	}
 }
 
-float** mat_Transpose(float **mat, int n)
-{
-	float **trans = mat_Create(n);
-
-	for(int i=0; i<n; i++)
-	{
-		for(int j=0; j<n; j++)
-		{
-			trans[j][i] = mat[i][j];
-		}
-	}
-
-	return trans;
+void mat_Transpose(float **mat, float **trans, int n) {
+    // Caso 1: Si son matrices distintas, transponemos directo
+    if (mat != trans)
+    {
+        for(int i=0; i<n; i++)
+        {
+            for(int j=0; j<n; j++)
+            {
+                trans[j][i] = mat[i][j];
+            }
+        }
+    } 
+    // Caso 2: Si es la misma matriz, usamos un SWAP
+    else
+    {
+        float temp = 0;
+        for(int i=0; i<n; i++)
+        {
+            for(int j=i+1; j<n; j++)
+            {
+                temp = mat[i][j];
+                mat[i][j] = mat[j][i];
+                mat[j][i] = temp;
+            }
+        }
+    }
 }
