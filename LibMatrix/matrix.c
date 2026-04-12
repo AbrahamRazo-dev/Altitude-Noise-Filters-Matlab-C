@@ -1,70 +1,89 @@
 #include "matrix.h"
 #include "stdlib.h"
 //its assumed, every matrix is square. Hence mat[n][n]
-float** mat_Create(int n)
+
+
+void mat_Create(Matrix *ptr)
 {
-	float **mat = (float**)malloc(n * sizeof(float*));
+	ptr->mat = (float**)malloc(ptr->row * sizeof(float*));
 
-	if(mat == NULL) return NULL;
+	if(ptr->mat == NULL) return;
 
-	for(int i=0; i<n; i++)
+	for(int i=0; i< ptr->row; i++)
 	{	
-		mat[i] = (float*)calloc(n, sizeof(float));
-		if(mat[i] == NULL)
+		ptr->mat[i] = (float*)calloc(ptr->col, sizeof(float));
+		if(ptr->mat[i] == NULL)
 		{
             for (int j = 0; j < i; j++) 
             {
-            	free(mat[j]);
+            	free(ptr->mat[j]);
             }
-            free(mat);
-            return NULL;
+            free(ptr->mat);
+            return;
         }
 	}
-	return mat;
 }
 
-void mat_Show(float** mat, int n)
+void mat_Show(Matrix *ptr)
 {
-	for(int i=0; i<n; i++)
+	for(int i = 0; i < ptr->row; i++)
 	{
-		for(int j=0; j<n; j++)
+		for(int j=0; j < ptr->col; j++)
 		{
-			printf("%4f ", mat[i][j]);
+			printf("%.4f ", ptr->mat[i][j]);
 		}
 		printf("\n");
 	}
 }
 
-void mat_Free(float** mat, int n)
+void mat_Free(Matrix *ptr)
 {
-	for(int i=0; i<n; i++)
+	if(ptr->mat == NULL) return;
+
+	for(int i=0; i< ptr->row; i++)
 	{
-		free(mat[i]);
+		if(ptr->mat[i] != NULL)
+		{
+			free(ptr->mat[i]);
+		}
 	}
-	free(mat);
+	free(ptr->mat);
+	ptr->mat = NULL;
+	ptr->row = 0;
+	ptr->col = 0;
 }
 
-void mat_Identity(float **matrix, int n)
+void mat_Identity(Matrix *ptr)
 {
-	for(int i = 0; i < n; i++)
+	if(ptr->col != ptr->row)
 	{
-		for(int j = 0; j < n; j++)
+		printf("Error. No se puede hacer matriz identidad porque la matriz no es cuadrada\n");
+		return;
+	}
+	for(int i = 0; i < ptr->row; i++)
+	{
+		for(int j = 0; j < ptr->col; j++)
 		{
-			matrix[i][j] = 0;
-			if(i==j) matrix[i][j] = 1;
+			ptr->mat[i][j] = 0;
+			if(i==j) ptr->mat[i][j] = 1;
 		}
 	}
 }
 
-void mat_Transpose(float **mat, float **trans, int n) {
+void mat_Transpose(Matrix *original, Matrix *trans) {
     // Caso 1: Si son matrices distintas, transponemos directo
-    if (mat != trans)
+    trans->col = original->row;
+    trans->row = original->col;
+
+
+    if (original->mat != trans->mat)
     {
-        for(int i=0; i<n; i++)
+        mat_Create(trans);
+        for(int i = 0; i < original->row; i++)
         {
-            for(int j=0; j<n; j++)
+            for(int j = 0; j < original->col; j++)
             {
-                trans[j][i] = mat[i][j];
+                trans->mat[j][i] = original->mat[i][j];
             }
         }
     } 
@@ -72,36 +91,51 @@ void mat_Transpose(float **mat, float **trans, int n) {
     else
     {
         float temp = 0;
-        for(int i=0; i<n; i++)
+        for(int i = 0; i < original->row; i++)
         {
-            for(int j=i+1; j<n; j++)
+            for(int j = i + 1; j < original->col; j++)
             {
-                temp = mat[i][j];
-                mat[i][j] = mat[j][i];
-                mat[j][i] = temp;
+                temp = original->mat[i][j];
+                original->mat[i][j] = original->mat[j][i];
+                original->mat[j][i] = temp;
             }
         }
     }
 }
 
-void mat_Multiplication(float **A, float **B, float **C, int colA, int rowA, int colB, int rowB)
+void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 {
-	if(colA!=rowB)
+	if(A->col != B->row)//validar dimensiones
 	{
 		printf("No se puede realizar la multiplicacion. Las dimensiones no coinciden\n");
 		return;
 	}
 
-	float sum = 0;
-	for(int i=0; i<rowA; i++)
+	if(C->mat != NULL)//verificar si la matriz resultado (C) ya existe
+	{//la matriz ya existe
+		if(C->row != A->row || C->col != B->col)
+		{//Ya existe la matriz. Corroboramos dimensiones.
+			mat_Free(C);
+		}
+	}
+	
+	if(C->mat == NULL)
 	{
-		for(int j=0; j<colB; j++)
+		C->row = A->row;
+		C->col = B->col;
+		mat_Create(C);
+	}
+
+	float sum = 0;
+	for(int i = 0; i < A->row; i++)
+	{
+		for(int j = 0; j < B->col; j++)
 		{
-			for(int k=0; k<colA; k++)
+			for(int k = 0; k < A->col; k++)
 			{
-				sum += A[i][k] * B[k][j];
+				sum += A->mat[i][k] * B->mat[k][j];
 			}
-			C[i][j] = sum;
+			C->mat[i][j] = sum;
 			sum = 0;
 		}
 	}

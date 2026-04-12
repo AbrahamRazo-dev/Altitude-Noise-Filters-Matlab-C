@@ -1,10 +1,15 @@
 #include "stdio.h"
 
-float** mat_Create(int);
-void mat_Show(float**, int);
-void mat_Free(float**, int);
-void mat_Identity(float **, int);
-void mat_Transpose(float **, float **, int);
-void mat_Multiplication(float **, float **, float **, int, int, int, int);
+typedef struct{
+	int row;
+	int col;
+	float **mat;
+}Matrix ;
+void mat_Create(Matrix*);
+void mat_Show(Matrix*);
+void mat_Free(Matrix*);
+void mat_Identity(Matrix*);
+void mat_Transpose(Matrix*, Matrix*);
+void mat_Multiplication(Matrix*, Matrix*, Matrix*);
 void mat_Inverse();
 

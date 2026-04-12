@@ -2,34 +2,36 @@
 #include "stdlib.h"
 
 #define N 3
+#define M 3
 
 int main()
 {
-	float **mat, **trans, **result;
+	Matrix A = {0, 0, NULL};
+	Matrix B = {0, 0, NULL};
+	Matrix C = {0, 0, NULL};
+	A.row = N;
+	A.col = M;
+	B.row = N;
+	B.col = M;
+	C.row = N;
+	C.col = M;
 
-	mat = mat_Create(N);
-	trans = mat_Create(N);
-	result = mat_Create(N);
-	
-	mat_Identity(mat, N);
+	mat_Create(&A);
+	mat_Create(&B);
 
-	mat[0][1] = 2;
-	mat[1][2] = 4;	
+	mat_Identity(&B);
+	A.mat[1][2] = 2;
+	A.mat[2][1] = 12;
+	A.mat[0][2] = 7;
 
-	mat_Transpose(mat, trans, N);
+	mat_Multiplication(&A,&B,&C);
 
-	mat_Multiplication(mat, trans, result, N, N, N, N);
+	mat_Show(&A);
+	mat_Show(&B);
+	mat_Show(&C);
 
-	mat_Show(mat, N);
-	printf("\n");
-	mat_Show(trans, N);
-	printf("\n");
-	mat_Show(result, N);
-	printf("\n");
 
-	mat_Free(mat, N);
-	mat_Free(trans, N);
-	mat_Free(result, N);
+	mat_Free(&A);
 
 	return 0;
 }
