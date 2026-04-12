@@ -1,7 +1,15 @@
 #include "matrix.h"
 #include "stdlib.h"
-//its assumed, every matrix is square. Hence mat[n][n]
 
+Matrix mat_Default()
+{
+	Matrix mat;
+	mat.row = 0;
+	mat.col = 0;
+	mat.mat = NULL;
+
+	return mat;
+}
 
 void mat_Create(Matrix *ptr)
 {
@@ -26,6 +34,7 @@ void mat_Create(Matrix *ptr)
 
 void mat_Show(Matrix *ptr)
 {
+	printf("\n");
 	for(int i = 0; i < ptr->row; i++)
 	{
 		for(int j=0; j < ptr->col; j++)
@@ -34,6 +43,7 @@ void mat_Show(Matrix *ptr)
 		}
 		printf("\n");
 	}
+	printf("\n");
 }
 
 void mat_Free(Matrix *ptr)

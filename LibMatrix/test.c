@@ -2,27 +2,28 @@
 #include "stdlib.h"
 
 #define N 3
-#define M 3
+#define M 2
 
 int main()
 {
-	Matrix A = {0, 0, NULL};
-	Matrix B = {0, 0, NULL};
-	Matrix C = {0, 0, NULL};
-	A.row = N;
+	Matrix A = mat_Default();
+	Matrix B = mat_Default();
+	Matrix C = mat_Default();
+	A.row = M;
 	A.col = M;
-	B.row = N;
-	B.col = M;
-	C.row = N;
-	C.col = M;
+	B.row = M;
+	B.col = N;
+	//C.row = N;
+	//C.col = M;
 
 	mat_Create(&A);
 	mat_Create(&B);
 
-	mat_Identity(&B);
-	A.mat[1][2] = 2;
-	A.mat[2][1] = 12;
-	A.mat[0][2] = 7;
+	mat_Identity(&A);
+	B.mat[0][1] = 3;
+	B.mat[0][2] = 5;
+	B.mat[1][2] = 9;
+	B.mat[1][0] = 10;
 
 	mat_Multiplication(&A,&B,&C);
 
@@ -32,6 +33,8 @@ int main()
 
 
 	mat_Free(&A);
+	mat_Free(&B);
+	mat_Free(&C);
 
 	return 0;
 }

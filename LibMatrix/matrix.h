@@ -5,6 +5,7 @@ typedef struct{
 	int col;
 	float **mat;
 }Matrix ;
+Matrix mat_Default();
 void mat_Create(Matrix*);
 void mat_Show(Matrix*);
 void mat_Free(Matrix*);
