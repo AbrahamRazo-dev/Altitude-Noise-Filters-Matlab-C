@@ -2,17 +2,17 @@
 #include "stdlib.h"
 
 #define N 3
-#define M 3
+#define M 2
 
 int main()
 {
 	Matrix A = mat_Default();
 
-	A.row = M;
-	A.col = M;
+	A.row = N;
+	A.col = N;
 
 
-	mat_Create(&A);
+	//mat_Create(&A);
 
 
 	mat_Identity(&A);

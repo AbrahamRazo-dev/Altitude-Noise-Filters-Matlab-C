@@ -17,7 +17,11 @@ void mat_Create(Matrix *ptr)
 
 	ptr->mat = (float**)malloc(ptr->row * sizeof(float*));
 
-	if(ptr->mat == NULL) return;
+	if(ptr->mat == NULL) 
+	{
+		*ptr = mat_Default();
+		return;
+	}
 
 	for(int i=0; i< ptr->row; i++)
 	{	
@@ -59,6 +63,13 @@ void mat_Copy(Matrix *original, Matrix *copy)
 
 void mat_Show(Matrix *ptr)
 {
+	if(ptr->mat == NULL)
+	{
+		printf("\n[Aviso]. Matriz vacia\n");
+		return;
+	}
+	if(ptr->col <= 0 || ptr->row <= 0) return;
+
 	printf("\n");
 	for(int i = 0; i < ptr->row; i++)
 	{
@@ -93,6 +104,13 @@ void mat_Identity(Matrix *ptr)
 		printf("Error. No se puede hacer matriz identidad porque la matriz no es cuadrada\n");
 		return;
 	}
+
+	if(ptr->mat == NULL)
+	{
+		mat_Create(ptr);
+		if(ptr->mat == NULL) return;//fallo de creacion de memoria
+	}
+
 	for(int i = 0; i < ptr->row; i++)
 	{
 		for(int j = 0; j < ptr->col; j++)
