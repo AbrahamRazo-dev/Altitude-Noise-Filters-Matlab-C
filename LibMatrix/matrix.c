@@ -13,6 +13,8 @@ Matrix mat_Default()
 
 void mat_Create(Matrix *ptr)
 {
+	if(ptr->row <= 0|| ptr->col <= 0) return; //validar que las dimensiones sean mayores a 0
+
 	ptr->mat = (float**)malloc(ptr->row * sizeof(float*));
 
 	if(ptr->mat == NULL) return;
@@ -62,7 +64,7 @@ void mat_Show(Matrix *ptr)
 	{
 		for(int j=0; j < ptr->col; j++)
 		{
-			printf("%.4f ", ptr->mat[i][j]);
+			printf("%8.3f ", ptr->mat[i][j]);
 		}
 		printf("\n");
 	}
@@ -160,13 +162,13 @@ void mat_Transpose(Matrix *original, Matrix *trans) {
 
 void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 {
-	if(A->col != B->row)//validar dimensiones
-	{
+	if(A->col != B->row || A->mat == NULL || B->mat == NULL )//validar dimensiones
+	{//mat_Create ya valida que col y row de cada matriz sean mayores a 0
 		printf("No se puede realizar la multiplicacion. Las dimensiones no coinciden\n");
 		return;
 	}
 
-	if(C->mat != NULL)//verificar si la matriz resultado (C) ya existe
+	if(C->mat != NULL && C->mat != A->mat && C->mat != B->mat)//verificar si la matriz resultado (C) ya existe
 	{//la matriz ya existe
 		if(C->row != A->row || C->col != B->col)
 		{//Ya existe la matriz. Corroboramos dimensiones.
@@ -183,16 +185,80 @@ void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 	}
 
 	float sum = 0;
-	for(int i = 0; i < A->row; i++)
+	//Caso donde C es solo A, B es diferente
+	if(C->mat == A->mat && C->mat != B->mat)
 	{
-		for(int j = 0; j < B->col; j++)
+		Matrix temp = mat_Default();
+		mat_Copy(A,&temp);
+
+		for(int i = 0; i < temp.row; i++)
 		{
-			for(int k = 0; k < A->col; k++)
+			for(int j = 0; j < B->col; j++)
 			{
-				sum += A->mat[i][k] * B->mat[k][j];
+				for(int k = 0; k < temp.col; k++)
+				{
+					sum += temp.mat[i][k] * B->mat[k][j];
+				}
+				C->mat[i][j] = sum;
+				sum = 0;
 			}
-			C->mat[i][j] = sum;
-			sum = 0;
+		}
+		mat_Free(&temp);
+	}
+	//Caso donde C es solo B, A es diferente
+	else if(C->mat == B->mat && C->mat != A->mat)
+	{
+		Matrix temp = mat_Default();
+		mat_Copy(B,&temp);
+
+		for(int i = 0; i < A->row; i++)
+		{
+			for(int j = 0; j < temp.col; j++)
+			{
+				for(int k = 0; k < A->col; k++)
+				{
+					sum += A->mat[i][k] * temp.mat[k][j];
+				}
+				C->mat[i][j] = sum;
+				sum = 0;
+			}
+		}
+		mat_Free(&temp);
+	}
+	//Caso donde C es B y A. Es decir A = B = C
+	else if(C->mat == B->mat && C->mat == A->mat)
+	{
+		Matrix temp = mat_Default();
+		mat_Copy(A,&temp);
+
+		for(int i = 0; i < temp.row; i++)
+		{
+			for(int j = 0; j < temp.col; j++)
+			{
+				for(int k = 0; k < temp.col; k++)
+				{
+					sum += temp.mat[i][k] * temp.mat[k][j];
+				}
+				C->mat[i][j] = sum;
+				sum = 0;
+			}
+		}
+		mat_Free(&temp);
+	}
+	//Caso donde ninguna es la misma
+	else if(C->mat != A->mat && C->mat != B->mat)
+	{
+		for(int i = 0; i < A->row; i++)
+		{
+			for(int j = 0; j < B->col; j++)
+			{
+				for(int k = 0; k < A->col; k++)
+				{
+					sum += A->mat[i][k] * B->mat[k][j];
+				}
+				C->mat[i][j] = sum;
+				sum = 0;
+			}
 		}
 	}
 
