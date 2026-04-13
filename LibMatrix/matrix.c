@@ -32,6 +32,29 @@ void mat_Create(Matrix *ptr)
 	}
 }
 
+void mat_Copy(Matrix *original, Matrix *copy)
+{
+	if(original->mat == copy->mat) return; 
+	//No tiene sentido copiar valores de una matriz a si misma
+
+	if(original->row <= 0 || original->col <= 0 || original->mat == NULL) return;
+	//validar original
+	mat_Free(copy);
+	copy->row = original->row;
+	copy->col = original->col;
+	mat_Create(copy);
+
+	if(copy->mat == NULL) return; //no se pudo crear copy por falta de memoria.
+
+	for(int i = 0; i < original->row; i++)
+	{
+		for(int j = 0; j < original->col; j++)
+		{
+			copy->mat[i][j] = original->mat[i][j];
+		}
+	}
+}
+
 void mat_Show(Matrix *ptr)
 {
 	printf("\n");
@@ -58,9 +81,7 @@ void mat_Free(Matrix *ptr)
 		}
 	}
 	free(ptr->mat);
-	ptr->mat = NULL;
-	ptr->row = 0;
-	ptr->col = 0;
+	*ptr = mat_Default();
 }
 
 void mat_Identity(Matrix *ptr)
@@ -80,15 +101,36 @@ void mat_Identity(Matrix *ptr)
 	}
 }
 
+
+
 void mat_Transpose(Matrix *original, Matrix *trans) {
+
+    //1.0 Validar si las matrices existen
+    if(original->mat == NULL)
+    {
+    	printf("La matriz original no existe.\n");
+    	return;
+    }
+    
+    //1.1 Validar dimensiones de trans
+    if(original->mat != trans->mat && (original->row != trans->col || original->col != trans->row))
+    {
+		mat_Free(trans);
+    }
+
+    //2.0 Validar si la trans existe
+    if(trans->mat == NULL)
+    {
+    	
+    	trans->row = original->col;
+    	trans->col = original->row;
+    	mat_Create(trans);
+    	if(trans->mat == NULL) return; //falla de creacion de memoria.
+    }
+
     // Caso 1: Si son matrices distintas, transponemos directo
-    trans->col = original->row;
-    trans->row = original->col;
-
-
     if (original->mat != trans->mat)
     {
-        mat_Create(trans);
         for(int i = 0; i < original->row; i++)
         {
             for(int j = 0; j < original->col; j++)
@@ -96,21 +138,24 @@ void mat_Transpose(Matrix *original, Matrix *trans) {
                 trans->mat[j][i] = original->mat[i][j];
             }
         }
-    } 
-    // Caso 2: Si es la misma matriz, usamos un SWAP
+    }
     else
     {
-        float temp = 0;
-        for(int i = 0; i < original->row; i++)
+        Matrix temp = mat_Default();
+		mat_Copy(original, &temp);
+		mat_Free(trans);
+		trans->row = temp.col;
+		trans->col = temp.row;
+		mat_Create(trans);
+        for(int i = 0; i < temp.row; i++)
         {
-            for(int j = i + 1; j < original->col; j++)
+            for(int j = 0; j < temp.col; j++)
             {
-                temp = original->mat[i][j];
-                original->mat[i][j] = original->mat[j][i];
-                original->mat[j][i] = temp;
+                trans->mat[j][i] = temp.mat[i][j];
             }
         }
-    }
+        mat_Free(&temp);
+    } 
 }
 
 void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
@@ -134,6 +179,7 @@ void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 		C->row = A->row;
 		C->col = B->col;
 		mat_Create(C);
+		if(C->mat == NULL) return; //falla en la creacion de memoria.
 	}
 
 	float sum = 0;
