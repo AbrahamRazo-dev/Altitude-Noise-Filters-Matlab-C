@@ -8,18 +8,18 @@ int main()
 {
 	Matrix A = mat_Default();
 
-	A.row = N;
+	A.row = 1;
 	A.col = N;
 
 
-	//mat_Create(&A);
+	mat_Create(&A);
 
 
 	mat_Identity(&A);
-	A.mat[0][1] = 3;
-	A.mat[0][2] = 5;
-	A.mat[1][2] = 9;
-	A.mat[1][0] = 10;
+	//A.mat[0][1] = 3;
+	//A.mat[0][2] = 5;
+	//A.mat[1][2] = 9;
+	//A.mat[1][0] = 10;
 
 	mat_Show(&A);
 

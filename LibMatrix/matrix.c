@@ -65,7 +65,7 @@ void mat_Show(Matrix *ptr)
 {
 	if(ptr->mat == NULL)
 	{
-		printf("\n[Aviso]. Matriz vacia\n");
+		printf("[Aviso][Show]. Matriz vacia.\n");
 		return;
 	}
 	if(ptr->col <= 0 || ptr->row <= 0) return;
@@ -99,9 +99,9 @@ void mat_Free(Matrix *ptr)
 
 void mat_Identity(Matrix *ptr)
 {
-	if(ptr->col != ptr->row)
+	if(ptr->col != ptr->row || ptr->col <= 0 || ptr->row <= 0)
 	{
-		printf("Error. No se puede hacer matriz identidad porque la matriz no es cuadrada\n");
+		printf("[Error][Identity]. No se puede hacer matriz identidad porque la matriz no es cuadrada.\n");
 		return;
 	}
 
@@ -128,7 +128,7 @@ void mat_Transpose(Matrix *original, Matrix *trans) {
     //1.0 Validar si las matrices existen
     if(original->mat == NULL)
     {
-    	printf("La matriz original no existe.\n");
+    	printf("[Error][Transpose]. La matriz original no existe.\n");
     	return;
     }
     
@@ -182,7 +182,7 @@ void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 {
 	if(A->col != B->row || A->mat == NULL || B->mat == NULL )//validar dimensiones
 	{//mat_Create ya valida que col y row de cada matriz sean mayores a 0
-		printf("No se puede realizar la multiplicacion. Las dimensiones no coinciden\n");
+		printf("[Error][Multiplication]. No se puede realizar la multiplicacion. Las dimensiones no coinciden.\n");
 		return;
 	}
 
