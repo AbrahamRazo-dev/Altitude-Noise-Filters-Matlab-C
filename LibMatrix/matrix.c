@@ -1,3 +1,4 @@
+#include "math.h"
 #include "matrix.h"
 #include "stdlib.h"
 
@@ -75,7 +76,7 @@ void mat_Show(Matrix *ptr)
 	{
 		for(int j=0; j < ptr->col; j++)
 		{
-			printf("%8.3f ", ptr->mat[i][j]);
+			printf("%8.4f ", ptr->mat[i][j]);
 		}
 		printf("\n");
 	}
@@ -280,4 +281,81 @@ void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 		}
 	}
 
+}
+
+void mat_Inverse(Matrix *original, Matrix *inversa)
+{
+
+	//Matriz Aumentada
+	Matrix aumentada = mat_Default();
+	aumentada.row = original->row;
+	aumentada.col = original->col*2;
+	mat_Create(&aumentada);
+
+	for(int i = 0; i < aumentada.row; i++)
+	{
+		for(int j = 0; j < aumentada.col; j++)
+		{
+			if(j < original->col)
+			{//copiamos matriz original
+				aumentada.mat[i][j] = original->mat[i][j];
+			}
+			else
+			{ //hacemos matriz identidad
+				if(j - original->col == i)
+				{
+					aumentada.mat[i][j] = 1;
+				}
+				else
+				{
+					aumentada.mat[i][j] = 0;
+				}
+			}
+		}
+	}
+
+	//Metodo Gauss Jordan
+    float pivote = 0;
+    float factor = 0;
+    for(int j = 0; j < original->col; j++)
+    {
+        pivote = aumentada.mat[j][j];
+        
+        // Iteramos sobre TODAS las filas, no solo las de abajo
+        for(int i = 0; i < original->row; i++) 
+        {
+            if (i == j) continue; // Nos saltamos la fila pivote
+            
+            if(fabs(aumentada.mat[i][j]) > 0.001)
+            {
+                factor = -(aumentada.mat[i][j] / pivote);
+                
+                // Sumar las filas multiplicadas en un solo paso SIN destruir la fila j
+                for(int r = 0; r < aumentada.col; r++)
+                {
+                    aumentada.mat[i][r] += aumentada.mat[j][r] * factor;
+                }
+            }
+        }
+    }
+	//Normalizar para hacer identidad
+	for(int i = 0; i < aumentada.row; i++)
+	{
+		pivote = aumentada.mat[i][i];
+		for(int j = 0; j < aumentada.col; j++)
+		{
+			aumentada.mat[i][j] = aumentada.mat[i][j]/pivote;
+		}
+	}
+
+	//Copiar resultado en inversa
+	for(int i = 0; i < aumentada.row; i++)
+	{
+		for(int j = original->col; j < aumentada.col; j++)
+		{
+			inversa->mat[i][j-original->col] = aumentada.mat[i][j];
+		}
+	}
+
+	mat_Free(&aumentada);
 }

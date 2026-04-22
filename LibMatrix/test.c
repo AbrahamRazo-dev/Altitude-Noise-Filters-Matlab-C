@@ -7,31 +7,34 @@
 int main()
 {
 	Matrix A = mat_Default();
+	Matrix B = mat_Default();	
 
-	A.row = 1;
+	A.row = N;
 	A.col = N;
+	B.row = N;
+	B.col = N;
 
 
 	mat_Create(&A);
+	mat_Create(&B);
 
 
 	mat_Identity(&A);
-	//A.mat[0][1] = 3;
-	//A.mat[0][2] = 5;
-	//A.mat[1][2] = 9;
-	//A.mat[1][0] = 10;
+	A.mat[0][0] = 2;
+	A.mat[1][1] = 5;
+	A.mat[2][2] = 9;
+	A.mat[0][2] = 10;
+	A.mat[2][0] = 7;
 
 	mat_Show(&A);
 
-	mat_Multiplication(&A,&A,&A);
+	mat_Inverse(&A,&B);
 
-	mat_Show(&A);
+	mat_Show(&B);
 
-	mat_Transpose(&A,&A);
-
-	mat_Show(&A);
 
 	mat_Free(&A);
+	mat_Free(&B);
 
 	return 0;
 }

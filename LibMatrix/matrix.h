@@ -13,5 +13,5 @@ void mat_Free(Matrix*);//ROBUSTO
 void mat_Identity(Matrix*);//ROBUSTO
 void mat_Transpose(Matrix*, Matrix*);//ROBUSTO
 void mat_Multiplication(Matrix*, Matrix*, Matrix*);//ROBUSTO
-void mat_Inverse();
+void mat_Inverse(Matrix *, Matrix*);
 
