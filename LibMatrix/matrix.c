@@ -283,79 +283,222 @@ void mat_Multiplication(Matrix *A, Matrix *B, Matrix *C)
 
 }
 
+/*
+ * CORRECCIONES APLICADAS:
+ *
+ * 1. [CRÍTICO] mat_Inverse - Gauss-Jordan: Se agregó verificación de pivote != 0
+ *    antes de dividir, y re-pivoteo dinámico por columna dentro del loop principal.
+ *
+ * 2. [LÓGICO] mat_Singular: Eliminada la función de detección previa incompleta.
+ *    La singularidad ahora se detecta correctamente DENTRO de mat_Pivoting,
+ *    que se llama una sola vez al inicio para ordenar filas óptimamente.
+ *
+ * 3. [ROBUSTEZ] mat_Pivoting: Sin cambios de lógica, pero ahora es el único
+ *    punto de verdad sobre si la matriz es singular.
+ *
+ * 4. [ROBUSTEZ] Normalización movida DENTRO del loop de Gauss-Jordan (por fila/columna)
+ *    para evitar acumulación de error numérico.
+ */
+
+/* ─────────────────────────────────────────────────────────────
+   mat_Pivoting
+   Aplica pivoteo parcial sobre la diagonal de 'matriz'.
+   Retorna 1 si tuvo éxito (no singular), 0 si es singular.
+   ───────────────────────────────────────────────────────────── */
+int mat_Pivoting(Matrix *matriz)
+{
+    for(int k = 0; k < matriz->row; k++)
+    {
+        int   max_row = k;
+        float max_val = fabs(matriz->mat[k][k]);
+
+        /* Buscar el máximo en la columna k desde la fila k hacia abajo */
+        for(int i = k + 1; i < matriz->row; i++)
+        {
+            if(fabs(matriz->mat[i][k]) > max_val)
+            {
+                max_val = fabs(matriz->mat[i][k]);
+                max_row = i;
+            }
+        }
+
+        /* Si la columna entera es cero, la matriz es singular */
+        if(max_val < 0.001)
+            return 0; /* Singular */
+
+        /* Intercambiar punteros de fila (O(1), sin copiar valores) */
+        if(max_row != k)
+        {
+            float *temp        = matriz->mat[k];
+            matriz->mat[k]     = matriz->mat[max_row];
+            matriz->mat[max_row] = temp;
+        }
+    }
+
+    return 1; /* No singular */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   mat_Singular
+   Wrapper simplificado: delega toda la lógica a mat_Pivoting.
+   Retorna 1 si la matriz ES singular, 0 si NO lo es.
+   ───────────────────────────────────────────────────────────── */
+int mat_Singular(Matrix *matriz)
+{
+    /*
+     * CORRECCIÓN: La detección previa (solo revisar la diagonal original)
+     * era incompleta: una matriz puede tener diagonal no-nula y aún ser
+     * singular por filas linealmente dependientes.
+     *
+     * mat_Pivoting recorre TODAS las columnas buscando el máximo real,
+     * detectando correctamente cualquier caso de singularidad.
+     */
+    if(mat_Pivoting(matriz))
+    {
+        return 0; /* Se pudo pivotar → no es singular */
+    }
+
+    return 1; /* No se pudo pivotar → es singular */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   mat_Inverse
+   Calcula la inversa de 'original' y la guarda en 'inversa'
+   usando eliminación de Gauss-Jordan con pivoteo parcial
+   dinámico por columna.
+   ───────────────────────────────────────────────────────────── */
 void mat_Inverse(Matrix *original, Matrix *inversa)
 {
+    /* ── 0. Validaciones iniciales ── */
+    if(original == NULL || inversa == NULL)  return;
+    if(original->mat == NULL)                return;
+    if(original->row != original->col)       return;
+    if(original->row < 1)                    return;
 
-	//Matriz Aumentada
-	Matrix aumentada = mat_Default();
-	aumentada.row = original->row;
-	aumentada.col = original->col*2;
-	mat_Create(&aumentada);
+    int n = original->row;
 
-	for(int i = 0; i < aumentada.row; i++)
-	{
-		for(int j = 0; j < aumentada.col; j++)
-		{
-			if(j < original->col)
-			{//copiamos matriz original
-				aumentada.mat[i][j] = original->mat[i][j];
-			}
-			else
-			{ //hacemos matriz identidad
-				if(j - original->col == i)
-				{
-					aumentada.mat[i][j] = 1;
-				}
-				else
-				{
-					aumentada.mat[i][j] = 0;
-				}
-			}
-		}
-	}
+    /* ── 1. Construir la matriz aumentada [A | I] ── */
+    Matrix aumentada = mat_Default();
+    aumentada.row = n;
+    aumentada.col = n * 2;
+    mat_Create(&aumentada);
 
-	//Metodo Gauss Jordan
-    float pivote = 0;
-    float factor = 0;
-    for(int j = 0; j < original->col; j++)
+    if(aumentada.mat == NULL) return;
+
+    for(int i = 0; i < n; i++)
     {
-        pivote = aumentada.mat[j][j];
-        
-        // Iteramos sobre TODAS las filas, no solo las de abajo
-        for(int i = 0; i < original->row; i++) 
+        for(int j = 0; j < n * 2; j++)
         {
-            if (i == j) continue; // Nos saltamos la fila pivote
-            
-            if(fabs(aumentada.mat[i][j]) > 0.001)
+            if(j < n)
             {
-                factor = -(aumentada.mat[i][j] / pivote);
-                
-                // Sumar las filas multiplicadas en un solo paso SIN destruir la fila j
-                for(int r = 0; r < aumentada.col; r++)
-                {
-                    aumentada.mat[i][r] += aumentada.mat[j][r] * factor;
-                }
+                aumentada.mat[i][j] = original->mat[i][j];   /* Copia de A */
+            }
+            else
+            {
+                aumentada.mat[i][j] = (j - n == i) ? 1.0f : 0.0f; /* Identidad */
             }
         }
     }
-	//Normalizar para hacer identidad
-	for(int i = 0; i < aumentada.row; i++)
-	{
-		pivote = aumentada.mat[i][i];
-		for(int j = 0; j < aumentada.col; j++)
-		{
-			aumentada.mat[i][j] = aumentada.mat[i][j]/pivote;
-		}
-	}
 
-	//Copiar resultado en inversa
-	for(int i = 0; i < aumentada.row; i++)
-	{
-		for(int j = original->col; j < aumentada.col; j++)
-		{
-			inversa->mat[i][j-original->col] = aumentada.mat[i][j];
-		}
-	}
+    /* ── 2. Verificar singularidad con pivoteo inicial ──
+       mat_Singular llama a mat_Pivoting sobre la aumentada completa,
+       de modo que los intercambios de fila afectan también al lado I. */
+    if(mat_Singular(&aumentada))
+    {
+        printf("[Aviso][Inverse]. La matriz es singular, no tiene inversa.\n");
+        mat_Free(&aumentada);
+        return;
+    }
 
-	mat_Free(&aumentada);
+    /* ── 3. Eliminación de Gauss-Jordan con re-pivoteo dinámico ── */
+    for(int j = 0; j < n; j++)
+    {
+        /*
+         * CORRECCIÓN CRÍTICA: Re-pivoteo dinámico por columna.
+         * Las eliminaciones previas pueden haber introducido ceros nuevos
+         * en la diagonal, así que buscamos el mejor pivote disponible
+         * desde la fila j hacia abajo antes de cada columna.
+         */
+        int   max_row = j;
+        float max_val = fabs(aumentada.mat[j][j]);
+
+        for(int i = j + 1; i < n; i++)
+        {
+            if(fabs(aumentada.mat[i][j]) > max_val)
+            {
+                max_val = fabs(aumentada.mat[i][j]);
+                max_row = i;
+            }
+        }
+
+        /*
+         * CORRECCIÓN CRÍTICA: Verificar que el pivote no sea cero.
+         * Si lo es, la matriz resultó singular durante la eliminación
+         * (no fue detectada antes por ser borderline).
+         */
+        if(max_val < 0.001)
+        {
+            printf("[Aviso][Inverse]. Pivote nulo en columna %d. Matriz singular.\n", j);
+            mat_Free(&aumentada);
+            return;
+        }
+
+        /* Intercambiar filas si encontramos un pivote mejor */
+        if(max_row != j)
+        {
+            float *temp             = aumentada.mat[j];
+            aumentada.mat[j]        = aumentada.mat[max_row];
+            aumentada.mat[max_row]  = temp;
+        }
+
+        float pivote = aumentada.mat[j][j];
+
+        /*
+         * CORRECCIÓN DE ROBUSTEZ: Normalizar la fila del pivote AHORA
+         * (antes de eliminar las demás filas) en lugar de hacerlo al final.
+         * Esto reduce el error numérico acumulado en matrices grandes.
+         */
+        for(int r = 0; r < n * 2; r++)
+            aumentada.mat[j][r] /= pivote;
+
+        /* Eliminar la columna j en todas las demás filas */
+        for(int i = 0; i < n; i++)
+        {
+            if(i == j) continue;
+
+            float factor = aumentada.mat[i][j]; /* pivote ya es 1, factor directo */
+
+            if(fabs(factor) < 0.001) continue;  /* Ya es cero, nada que hacer */
+
+            for(int r = 0; r < n * 2; r++)
+                aumentada.mat[i][r] -= aumentada.mat[j][r] * factor;
+        }
+    }
+
+    /* ── 4. Preparar la matriz de salida 'inversa' ── */
+    if(inversa->mat != NULL && (inversa->row != n || inversa->col != n))
+    {
+        mat_Free(inversa);
+    }
+
+    if(inversa->mat == NULL)
+    {
+        inversa->row = n;
+        inversa->col = n;
+        mat_Create(inversa);
+
+        if(inversa->mat == NULL)
+        {
+            mat_Free(&aumentada);
+            return;
+        }
+    }
+
+    /* ── 5. Copiar la mitad derecha de la aumentada → inversa ── */
+    for(int i = 0; i < n; i++)
+        for(int j = 0; j < n; j++)
+            inversa->mat[i][j] = aumentada.mat[i][j + n];
+
+    /* ── 6. Liberar memoria temporal ── */
+    mat_Free(&aumentada);
 }

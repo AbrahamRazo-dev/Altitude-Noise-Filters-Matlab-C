@@ -28,9 +28,9 @@ int main()
 
 	mat_Show(&A);
 
-	mat_Inverse(&A,&B);
+	mat_Inverse(&A,&A);
 
-	mat_Show(&B);
+	mat_Show(&A);
 
 
 	mat_Free(&A);
