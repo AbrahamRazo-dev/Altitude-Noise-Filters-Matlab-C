@@ -1,10 +1,19 @@
 #include "stdio.h"
 
-float** mat_Create(int);
-void mat_Show(float**, int);
-void mat_Free(float**, int);
-void mat_Identity(float **, int);
-void mat_Transpose(float **, float **, int);
-void mat_Multiplication(float **, float **, float **, int, int, int, int);
-void mat_Inverse();
+typedef struct{
+	int row;
+	int col;
+	float **mat;
+}Matrix ;
+Matrix mat_Default();//ROBUSTO
+void mat_Create(Matrix*);//ROBUSTO
+void mat_Copy(Matrix*, Matrix*);//ROBUSTO
+void mat_Show(Matrix*);//ROBUSTO
+void mat_Free(Matrix*);//ROBUSTO
+void mat_Identity(Matrix*);//ROBUSTO
+void mat_Transpose(Matrix*, Matrix*);//ROBUSTO
+void mat_Multiplication(Matrix*, Matrix*, Matrix*);//ROBUSTO
+void mat_Inverse(Matrix *, Matrix*);
+int mat_Singular(Matrix *);
+int mat_Pivoting(Matrix *);
 
